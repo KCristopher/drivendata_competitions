@@ -1,6 +1,33 @@
 import pandas as pd
 import numpy as np
+from typing import Union
 
+def peek_data(df) :
+    
+    print()
+    print('Glance at the data : ')
+    print()
+    display(df.head())
+    print()
+    
+def get_info(df) :
+    
+    print('Data types, dimension of the data : ')
+    print()
+    display(df.info())
+    print()
+    
+def get_nans(df) :
+    
+    print('Missing values across variables : ')
+    print()
+    display(df.isnull().sum().sort_values(ascending = False))
+    print()
+    
+    print('Missing values - % of the data : ')
+    nulls_percentages = (df.isnull().sum() / len(df)) * 100
+    display(nulls_percentages.round(2).sort_values(ascending = False))
+    print()
 
 def summarize_df(df : pd.DataFrame) -> None:
     
@@ -17,28 +44,29 @@ def summarize_df(df : pd.DataFrame) -> None:
     
     """
     
-    print()
-    print('Glance at the data : ')
-    print()
-    display(df.head())
-    print()
+    peek_data(df = df)
+    get_info(df = df)
+    get_nans(df = df)
     
-    print('Data types, dimension of the data : ')
-    print()
-    display(df.info())
-    print()
+def replace_hidden_nans(df, nan_symbol : Union[str, float, int], col_name : str) -> None :
+    """
+    Takes a df, an alphanumeric character representing NaNs, and the name of
+    a column in that df and replaces all of the occurences of that character with NaNs.
     
-    print('Missing values across variables : ')
-    print()
-    display(df.isnull().sum().sort_values(ascending = False))
-    print()
+    Parameters
+    ----------
+    df : 
+    nan_symbol : 
+    col_name : 
     
-    print('Missing values - % of the data : ')
-    nulls_percentages = (df.isnull().sum() / len(df)) * 100
-    display(nulls_percentages.round(2).sort_values(ascending = False))
-    print()
+    Return
+    ------
+    None.
+    """
     
-def summarize_numeric_data(data : pd.DataFrame, subset = None) -> None:
+    df.loc[df[col_name] == nan_symbol, col_name] = np.nan
+    
+def summarize_numeric_data(data : pd.DataFrame, subset = None, exclude = None) -> None:
 
     """
     Parameters
@@ -46,6 +74,9 @@ def summarize_numeric_data(data : pd.DataFrame, subset = None) -> None:
     data : pandas DataFrame. The dataframe containing the data that we want to analyze.
     subset : None or list. Defaults to None. List of names of the columns that we want
                            to include in our numeric summary.
+    
+    exclude : None or list. Defaults to None. List of names of the columns that we want
+                           to exclude from our numeric summary.
     Example
     -------
     summarize_numeric_data(df, subset = ['age', 'wave'])
@@ -70,12 +101,18 @@ def summarize_numeric_data(data : pd.DataFrame, subset = None) -> None:
     
     """
     
-    numeric_data = [c for c in data.columns if (df[c].dtype in ['float64', 'int64']) \
-                    & (len(df[c].unique()) > 10)]
+    assert (subset is None) | (exclude is None), "You should specify which columns to include or which to exclude, but not both."
+    
+    numeric_data = [c for c in data.columns if (data[c].dtype in ['float64', 'int64']) \
+                    & (len(data[c].unique()) > 10)]
     
     relevant_data = data[numeric_data]
     
-    if subset:
+    if subset :
+        relevant_data = relevant_data[subset]
+    
+    if exclude :
+        subset = [n for n in numeric_data if n not in exclude]
         relevant_data = relevant_data[subset]
     
     print()
@@ -88,7 +125,7 @@ def summarize_numeric_data(data : pd.DataFrame, subset = None) -> None:
     display(relevant_data.describe().round(2))
     print()
 
-def look_at_variables_values(df : pd.DataFrame, num_uniq_values = 66) -> None:
+def look_at_variables_values(df : pd.DataFrame, num_uniq_values = 30) -> None:
 
   """
   Display sample unique values from the dataset.
@@ -108,5 +145,12 @@ def look_at_variables_values(df : pd.DataFrame, num_uniq_values = 66) -> None:
     print()
     print('Unique values from {}, limited to {}'.format(c, num_uniq_values))
     print()
-    print(set(df[c].sample(n = num_uniq_values)))
+    col_uniq_vals = df[c].unique()
+    
+    if num_uniq_values > len(col_uniq_vals) :
+        n = len(col_uniq_vals)
+    else :
+        n = num_uniq_values
+    
+    print(pd.Series(col_uniq_vals).sample(n = n).head(n = n))
     print()
