@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 from typing import Union
 
+try:
+    from IPython.display import display
+except:
+    display = print
+
 def peek_data(df) :
     
     print()
@@ -66,7 +71,8 @@ def replace_hidden_nans(df, nan_symbol : Union[str, float, int], col_name : str)
     
     df.loc[df[col_name] == nan_symbol, col_name] = np.nan
     
-def summarize_numeric_data(data : pd.DataFrame, subset = None, exclude = None) -> None:
+def summarize_numeric_data(data : pd.DataFrame, subset = None, exclude = None,\
+                           continuity_tresh_uv = 10) -> None:
 
     """
     Parameters
@@ -77,6 +83,11 @@ def summarize_numeric_data(data : pd.DataFrame, subset = None, exclude = None) -
     
     exclude : None or list. Defaults to None. List of names of the columns that we want
                            to exclude from our numeric summary.
+
+    continuity_tresh_uv : int. Defaults to 10. Number of unique values required for a feature
+                               to be consider continuous and therefore suitable input for
+                               pandas describe() and corr() methods.
+    
     Example
     -------
     summarize_numeric_data(df, subset = ['age', 'wave'])
@@ -104,7 +115,7 @@ def summarize_numeric_data(data : pd.DataFrame, subset = None, exclude = None) -
     assert (subset is None) | (exclude is None), "You should specify which columns to include or which to exclude, but not both."
     
     numeric_data = [c for c in data.columns if (data[c].dtype in ['float64', 'int64']) \
-                    & (len(data[c].unique()) > 10)]
+                    & (len(data[c].unique()) > continuity_tresh_uv)]
     
     relevant_data = data[numeric_data]
     
@@ -154,3 +165,5 @@ def look_at_variables_values(df : pd.DataFrame, num_uniq_values = 30) -> None:
     
     print(pd.Series(col_uniq_vals).sample(n = n).head(n = n))
     print()
+
+
